@@ -26,7 +26,7 @@ A lightweight tool for managing Advanced Avatar Settings (AAS) profiles in Chill
 ## Installation
 
 ### Windows Users
-1. Download the application files
+1. Download the .zip from [Releases](https://github.com/AstroDogeDX/CVR-AAS-Profile-Manager/releases/) and extract the contents
 2. Run `INSTALL DEPENDENCIES.bat` first to ensure you have the required Python libraries. This only has to be done once
 3. Run `CVR AAS Profile Manager.bat` to start the application
 
