@@ -2,7 +2,7 @@
 
 A user-friendly application for managing Advanced Avatar Settings (AAS) profiles for ChilloutVR. This tool allows you to view, edit, organize, and manage your avatar settings profiles with ease.
 
-![Main Page](main_page.png)
+![Main Page](https://github.com/user-attachments/assets/ad731bee-aaa0-420a-ae07-a7a5d4d07149)
 
 ## Features
 
@@ -24,7 +24,7 @@ A user-friendly application for managing Advanced Avatar Settings (AAS) profiles
   - See avatar names and IDs
   - Clean, intuitive layout
 
-![Profile View](profile_view.png)
+![Profile View](https://github.com/user-attachments/assets/62b6dc85-3308-4c7d-8144-4d5d1f4f38bf)
 
 ## Requirements
 
