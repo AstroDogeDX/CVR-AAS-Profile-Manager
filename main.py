@@ -124,11 +124,13 @@ class ProfileContentView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent
-        
-        # Initialize API
         self.cvr_api = CVRApi()
-        self.initialize_api()
-        
+        self.has_unsaved_changes = False
+        self.current_profile_index = None
+        self.setup_ui()
+    
+    def setup_ui(self):
+        """Set up the user interface."""
         # Create layout
         layout = QVBoxLayout(self)
         
@@ -412,24 +414,11 @@ class ProfileContentView(QWidget):
         self.settings_data = None
         self.original_settings_data = None  # Store original data for revert
         self.current_profile_index = -1
-        self.has_unsaved_changes = False
         self.edit_mode_enabled = False
         self.value_widgets = []  # Store references to value widgets
         
         # Initialize button states
         self.update_button_states()
-    
-    def initialize_api(self):
-        """Initialize the CVR API with credentials from autologin profile."""
-        if self.parent and hasattr(self.parent, 'settings_manager'):
-            autologin_path = self.parent.settings_manager.get_autologin_profile_path()
-            if autologin_path:
-                if self.cvr_api.load_credentials_from_file(autologin_path):
-                    print("Successfully authenticated with CVR API")
-                else:
-                    print("Failed to authenticate with CVR API")
-            else:
-                print("Autologin profile not found")
     
     def display_profile(self, file_path):
         """Display the contents of a profile file."""
@@ -914,7 +903,10 @@ class CVRProfileManager(QMainWindow):
         # Store profile data for sorting and filtering
         self.profile_data = []
         
-        # Check and set CVR directory
+        # Show the window first
+        self.show()
+        
+        # Then check and set CVR directory
         self.check_cvr_directory()
     
     def check_cvr_directory(self):
@@ -924,11 +916,83 @@ class CVRProfileManager(QMainWindow):
         if cvr_dir:
             print(f"CVR directory found: {cvr_dir}")
             self.directory_label.setText(f"CVR Directory: {cvr_dir}")
-            self.refresh_profiles()
+            self.initialize_api()  # Initialize API after directory is found
+            self.load_initial_profiles()  # Load profiles without cache first
+            self.refresh_profiles()  # Then refresh with cache
         else:
             print("CVR directory not found")
             self.directory_label.setText("CVR Directory: Not Set")
             self.prompt_cvr_directory()
+    
+    def load_initial_profiles(self):
+        """Load profiles without cache data first to show the UI quickly."""
+        print("Loading initial profiles...")
+        self.profile_list.clear()
+        self.profile_data = []  # Clear stored profile data
+        
+        profiles_dir = self.settings_manager.get_profiles_directory()
+        if not profiles_dir:
+            print("Could not find profiles directory")
+            self.status_label.setText("Could not find profiles directory")
+            return
+        
+        try:
+            # Get all .advavtr files in the directory
+            total_profiles = 0
+            empty_profiles = 0
+            show_empty = self.show_empty_checkbox.isChecked()
+            
+            # Get list of files first
+            profile_files = []
+            for file_name in os.listdir(profiles_dir):
+                if file_name.endswith(".advavtr"):
+                    total_profiles += 1
+                    file_path = os.path.join(profiles_dir, file_name)
+                    
+                    # Check if the profile is empty
+                    is_empty = self.is_empty_profile(file_path)
+                    if is_empty:
+                        empty_profiles += 1
+                        if not show_empty:
+                            continue
+                    
+                    profile_files.append((file_name, file_path, is_empty))
+            
+            # Create initial profile data with default values
+            for file_name, file_path, is_empty in profile_files:
+                # Get avatar ID from filename
+                avatar_id = os.path.splitext(file_name)[0]
+                
+                # Create default avatar data
+                avatar_data = {
+                    "name": "Loading...",
+                    "imageUrl": "",
+                    "lastUpdated": 0
+                }
+                
+                # Store profile data for sorting and filtering
+                self.profile_data.append((file_name, avatar_data, file_path, is_empty))
+            
+            # Sort and display profiles
+            self.sort_profiles()
+            
+            print(f"Found {total_profiles} profiles ({empty_profiles} empty)")
+            self.status_label.setText(f"Found {total_profiles} profiles ({empty_profiles} empty)")
+        except Exception as e:
+            print(f"Error loading profiles: {str(e)}")
+            self.status_label.setText(f"Error loading profiles: {str(e)}")
+    
+    def initialize_api(self):
+        """Initialize the CVR API with credentials from autologin profile."""
+        print("Initializing CVR API...")
+        autologin_path = self.settings_manager.get_autologin_profile_path()
+        if autologin_path:
+            if self.profile_view.cvr_api.load_credentials_from_file(autologin_path):
+                print("Successfully authenticated with CVR API")
+            else:
+                print("Failed to authenticate with CVR API")
+        else:
+            print("Autologin profile not found")
     
     def setup_main_page(self):
         """Set up the main page with directory selection and profile list."""
@@ -1358,7 +1422,7 @@ class CVRProfileManager(QMainWindow):
             if os.path.basename(file_name).lower() == "chilloutvr.exe":
                 print(f"Setting CVR directory: {cvr_dir}")
                 self.settings_manager.set_cvr_directory(cvr_dir)
-                self.check_cvr_directory()
+                self.check_cvr_directory()  # This will now also initialize the API
             else:
                 QMessageBox.critical(
                     self,

@@ -16,8 +16,6 @@ class CacheManager:
         self.avatar_cache_file = os.path.join(cache_dir, "avatar_cache.json")
         self.thumbnails_dir = os.path.join(cache_dir, "thumbnails")
         self.avatar_cache = {}
-        self.last_api_request_time = 0
-        self.min_request_interval = 0.5  # 500ms between requests
         
         # Create cache directories if they don't exist
         os.makedirs(cache_dir, exist_ok=True)
@@ -55,15 +53,6 @@ class CacheManager:
         
         # If not in cache and we have an API client, fetch from API
         if api_client and api_client.authenticated:
-            # Rate limit API requests
-            current_time = time.time()
-            time_since_last_request = current_time - self.last_api_request_time
-            if time_since_last_request < self.min_request_interval:
-                time.sleep(self.min_request_interval - time_since_last_request)
-            
-            # Update last request time
-            self.last_api_request_time = time.time()
-            
             # Get avatar data from API
             avatar_data = api_client.get_avatar_by_id(avatar_id)
             if avatar_data:
