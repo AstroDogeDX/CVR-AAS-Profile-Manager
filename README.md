@@ -55,9 +55,10 @@ A user-friendly application for managing Advanced Avatar Settings (AAS) profiles
 
 ### First Run
 
-1. When you first run the application, it will prompt you to select your ChilloutVR directory
-2. Navigate to and select the `ChilloutVR.exe` file
-3. The application will automatically scan for and load your avatar settings profiles
+1. When you first run the application, it will automatically attempt to locate your ChilloutVR installation in common Steam directories
+2. If the automatic detection fails, you will be prompted to manually select your ChilloutVR directory
+3. Navigate to and select the `ChilloutVR.exe` file
+4. The application will automatically scan for and load your avatar settings profiles
 
 ### Managing Profiles
 
