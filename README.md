@@ -1,30 +1,19 @@
-# ChilloutVR AAS Manager
+# CVR AAS Manager
 
-A user-friendly application for managing Advanced Avatar Settings (AAS) profiles for ChilloutVR. This tool allows you to view, edit, organize, and manage your avatar settings profiles with ease.
+A lightweight tool for managing Advanced Avatar Settings (AAS) profiles in ChilloutVR. This application helps you organize and maintain your avatar settings by providing an intuitive interface for viewing, modifying, and managing AAS profiles.
 
-![Main Page](https://github.com/user-attachments/assets/ad731bee-aaa0-420a-ae07-a7a5d4d07149)
+## Core Features
 
-## Features
+- **Profile Management**
+  - View and modify AAS settings values per avatar
+  - Rename, reorder, and delete saved settings profiles
+  - Remove empty profiles (generated when using an avatar without setting AAS options)
+  - Load external profiles from other locations
 
-- **Automatic Profile Detection**: Automatically finds and loads your avatar settings profiles from the ChilloutVR directory
-- **Profile Management**:
-  - View all your avatar settings profiles in one place
-  - Rename profiles for better organization
-  - Reorder profiles using drag-and-drop or up/down buttons
-  - Delete selected profiles
-  - Purge all empty profiles (profiles without saved settings)
-- **Advanced Editing**:
-  - Edit profile values directly (for advanced users)
-  - Save and revert changes
-- **Search and Sort**:
-  - Search profiles by name or filename
-  - Sort profiles by avatar name or filename
-- **Visual Interface**:
-  - View avatar thumbnails
-  - See avatar names and IDs
-  - Clean, intuitive layout
-
-![Profile View](https://github.com/user-attachments/assets/62b6dc85-3308-4c7d-8144-4d5d1f4f38bf)
+- **Visual Organization**
+  - Automatic avatar name and thumbnail retrieval from CVR API
+  - Search and sort profiles by name or filename
+  - Clean, intuitive interface for easy navigation
 
 ## Requirements
 
@@ -34,13 +23,12 @@ A user-friendly application for managing Advanced Avatar Settings (AAS) profiles
 
 ## Installation
 
-### Windows Users (Recommended)
-
+### Windows Users
 1. Download the application files
-2. Run `run.bat` to start the application
+2. Run `INSTALL DEPENDENCIES.bat` first to ensure you have the required Python libraries. This only has to be done once
+3. Run `CVR AAS Profile Manager.bat` to start the application
 
-### Alternative Setup (Non-Windows Users)
-
+### Other Operating Systems
 1. Install Python 3.6 or higher
 2. Install required packages:
    ```
@@ -54,40 +42,44 @@ A user-friendly application for managing Advanced Avatar Settings (AAS) profiles
 ## Usage
 
 ### First Run
+1. The application will attempt to automatically locate your ChilloutVR installation
+2. If automatic detection fails, you'll be prompted to manually select your ChilloutVR directory
+3. Select the `ChilloutVR.exe` file when prompted
+4. The application will scan for and load your AAS profiles
 
-1. When you first run the application, it will automatically attempt to locate your ChilloutVR installation in common Steam directories
-2. If the automatic detection fails, you will be prompted to manually select your ChilloutVR directory
-3. Navigate to and select the `ChilloutVR.exe` file
-4. The application will automatically scan for and load your avatar settings profiles
+### Managing Avatar Profiles
+- Double-click a profile to view and edit its settings
+- Use the search bar to filter profiles
+- Sort profiles by avatar name or filename
+- Delete individual profiles or purge all empty profiles
+- Load profiles from external locations if needed
 
-### Managing Profiles
+### Managing Settings Profiles
+- **Profile Renaming**
+  - Double-click a profile to rename it
+  - Or use the "Rename Profile" button below the list
 
-- **View Profiles**: Double-click a profile to view its settings
-- **Rename Profiles**: Select a profile and click "Rename Profile"
-- **Reorder Profiles**: Use the "Move Up" and "Move Down" buttons or drag and drop
-- **Delete Profiles**: Select a profile and click "Delete Selected Profile"
-- **Purge Empty Profiles**: Click "Purge Empty Profiles" to remove all profiles without saved settings
+- **Profile Reordering**
+  - Drag and drop profiles to reorder them
+  - Or use the "Move Up" and "Move Down" buttons below the list
 
-### Advanced Features
-
-- **Edit Mode**: Enable "Edit Mode" to modify profile values (for advanced users only)
-- **Load External Profiles**: Use "Load Profile from file..." to load profiles from other locations
-- **Search**: Use the search bar to filter profiles by name or filename
-- **Sort**: Use the dropdown to sort profiles by avatar name or filename
+- **Profile Deletion**
+  - Select a profile and press the Delete key
+  - Or use the "Delete Selected Profile" button below the list
 
 ## Notes
 
+- This is an unofficial tool and is not associated with Alpha Blend Interactive or ChilloutVR
 - The application requires an internet connection to fetch avatar data and thumbnails
-- Profile values are stored as floats in the game, but may represent different types of settings (sliders, toggles, etc.)
-- Editing values in edit mode should be done with caution, as incorrect values may affect avatar functionality
-- Empty profiles (those without saved settings) can be shown using the "Show Empty Profiles" checkbox
+- Profile values are stored as floats and should be modified with caution
+- Empty profiles can be shown using the "Show Empty Profiles" checkbox
 
 ## Troubleshooting
 
-- If the application cannot find your ChilloutVR directory, you can manually select it using the "Change Directory" button
-- If avatar thumbnails don't load, check your internet connection and try refreshing the profiles
-- If you encounter any issues, try running the application from the command line to see error messages
+- If the application can't find your ChilloutVR directory, use the "Change Directory" button to locate it manually
+- If avatar thumbnails don't load, check your internet connection
+- For any issues, run the application from the command line to view error messages
 
-## License
+## Disclaimer
 
-This application is provided as-is for the ChilloutVR community. Use at your own risk. 
+This application is provided as-is without any warranty. Use at your own risk. 
