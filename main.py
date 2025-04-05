@@ -113,6 +113,13 @@ class ProfileListView(QListWidget):
         self.parent.has_unsaved_changes = True
         self.parent.update_button_states()
 
+    def keyPressEvent(self, event):
+        """Handle key press events."""
+        if event.key() == Qt.Key.Key_Delete and self.currentItem():
+            self.parent.delete_selected_profile()
+        else:
+            super().keyPressEvent(event)
+
 class ProfileContentView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -127,6 +134,23 @@ class ProfileContentView(QWidget):
         
         # Add back button
         back_button = QPushButton("Back to Profiles")
+        back_button.setFixedHeight(28)  # Make button height consistent
+        back_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         back_button.clicked.connect(self.go_back)
         layout.addWidget(back_button)
         
@@ -143,6 +167,25 @@ class ProfileContentView(QWidget):
         
         # Add profile list (using our custom ProfileListView)
         self.profile_list = ProfileListView(self)
+        self.profile_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: white;
+                padding: 4px;
+            }
+            QListWidget::item {
+                padding: 4px;
+                border-radius: 4px;
+            }
+            QListWidget::item:selected {
+                background-color: #e0e0e0;
+                color: black;
+            }
+            QListWidget::item:hover {
+                background-color: #f5f5f5;
+            }
+        """)
         self.profile_list.currentItemChanged.connect(self.on_profile_selected)
         right_layout.addWidget(self.profile_list)
         
@@ -151,13 +194,84 @@ class ProfileContentView(QWidget):
         
         # Add rename button
         self.rename_button = QPushButton("Rename Profile")
+        self.rename_button.setFixedHeight(28)  # Make button height consistent
+        self.rename_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.rename_button.clicked.connect(self.rename_profile)
         profile_actions_layout.addWidget(self.rename_button)
         
+        # Add delete button
+        self.delete_button = QPushButton("Delete Profile")
+        self.delete_button.setFixedHeight(28)  # Make button height consistent
+        self.delete_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
+        self.delete_button.clicked.connect(self.delete_selected_profile)
+        profile_actions_layout.addWidget(self.delete_button)
+        
         # Add reorder buttons
-        self.move_up_button = QPushButton("Move Up")
+        self.move_up_button = QPushButton("↑")  # Unicode up arrow
+        self.move_up_button.setFixedSize(24, 24)  # Make buttons smaller
+        self.move_up_button.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.move_up_button.clicked.connect(self.move_profile_up)
-        self.move_down_button = QPushButton("Move Down")
+        self.move_down_button = QPushButton("↓")  # Unicode down arrow
+        self.move_down_button.setFixedSize(24, 24)  # Make buttons smaller
+        self.move_down_button.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.move_down_button.clicked.connect(self.move_profile_down)
         profile_actions_layout.addWidget(self.move_up_button)
         profile_actions_layout.addWidget(self.move_down_button)
@@ -208,6 +322,30 @@ class ProfileContentView(QWidget):
         # Add scroll area for values
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: white;
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: #f0f0f0;
+                width: 10px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: #ccc;
+                min-height: 20px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #999;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
         
         # Create widget to hold the values
         self.values_widget = QWidget()
@@ -228,8 +366,42 @@ class ProfileContentView(QWidget):
         # Add button layout for save and revert
         button_layout = QHBoxLayout()
         self.save_button = QPushButton("Save Changes")
+        self.save_button.setFixedHeight(28)  # Make button height consistent
+        self.save_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.save_button.clicked.connect(self.save_changes)
         self.revert_button = QPushButton("Revert Changes")
+        self.revert_button.setFixedHeight(28)  # Make button height consistent
+        self.revert_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.revert_button.clicked.connect(self.revert_changes)
         button_layout.addWidget(self.save_button)
         button_layout.addWidget(self.revert_button)
@@ -264,7 +436,14 @@ class ProfileContentView(QWidget):
         print(f"Displaying profile: {file_path}")
         try:
             with open(file_path, 'r') as file:
-                self.settings_data = json.load(file)
+                # Read the raw file contents first
+                raw_contents = file.read()
+                print("Raw file contents:", raw_contents)
+                
+                # Parse the JSON
+                self.settings_data = json.loads(raw_contents)
+                print("Parsed settings data:", json.dumps(self.settings_data, indent=2))
+                
                 self.original_settings_data = json.loads(json.dumps(self.settings_data))  # Deep copy for revert
                 self.current_file = file_path
                 
@@ -275,7 +454,8 @@ class ProfileContentView(QWidget):
                 if "savedSettings" in self.settings_data and isinstance(self.settings_data["savedSettings"], list):
                     for i, profile in enumerate(self.settings_data["savedSettings"]):
                         if "profileName" in profile:
-                            self.profile_list.addItem(profile["profileName"])
+                            profile_name = profile["profileName"]
+                            self.profile_list.addItem(profile_name)
                 
                 # Select the first profile if available
                 if self.profile_list.count() > 0:
@@ -508,6 +688,9 @@ class ProfileContentView(QWidget):
         # Update rename button
         self.rename_button.setEnabled(current_row >= 0)
         
+        # Update delete button
+        self.delete_button.setEnabled(current_row >= 0)
+        
         # Update save/revert buttons
         self.save_button.setEnabled(self.has_unsaved_changes)
         self.revert_button.setEnabled(self.has_unsaved_changes)
@@ -516,6 +699,38 @@ class ProfileContentView(QWidget):
         """Save changes to the profile file."""
         if not self.current_file or not self.settings_data:
             return
+        
+        # Check if any profiles were deleted
+        profiles_deleted = False
+        if self.original_settings_data and "savedSettings" in self.original_settings_data:
+            original_count = len(self.original_settings_data["savedSettings"])
+            current_count = len(self.settings_data["savedSettings"])
+            if current_count < original_count:
+                profiles_deleted = True
+        
+        # Check if any values were modified in edit mode
+        values_modified = False
+        if self.edit_mode_enabled and self.value_widgets:
+            values_modified = True
+            
+        # Show confirmation dialog if needed
+        if profiles_deleted or values_modified:
+            message = []
+            if profiles_deleted:
+                message.append("You have deleted one or more profiles.")
+            if values_modified:
+                message.append("You have modified values in edit mode.")
+            
+            reply = QMessageBox.question(
+                self,
+                "Confirm Save",
+                "Are you sure you want to save these changes?\n\n" + "\n".join(message),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply != QMessageBox.StandardButton.Yes:
+                return
         
         try:
             # Save the raw JSON content
@@ -637,11 +852,45 @@ class ProfileContentView(QWidget):
                 self.has_unsaved_changes = True
                 self.update_button_states()
 
+    def delete_selected_profile(self):
+        """Delete the currently selected profile."""
+        if not self.settings_data or "savedSettings" not in self.settings_data:
+            return
+            
+        current_row = self.profile_list.currentRow()
+        if current_row < 0:
+            return
+            
+        # Get current profile name
+        current_item = self.profile_list.currentItem()
+        if not current_item:
+            return
+            
+        # Remove the profile from the data
+        saved_settings = self.settings_data["savedSettings"]
+        saved_settings.pop(current_row)
+        
+        # Update the list widget
+        self.profile_list.takeItem(current_row)
+        
+        # If there are more profiles, select the next one
+        if self.profile_list.count() > 0:
+            if current_row >= self.profile_list.count():
+                current_row = self.profile_list.count() - 1
+            self.profile_list.setCurrentRow(current_row)
+        else:
+            self.profile_name_label.setText("No profiles found")
+            self.clear_values_display()
+        
+        # Mark that changes have been made
+        self.has_unsaved_changes = True
+        self.update_button_states()
+
 class CVRProfileManager(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CVR Advanced Avatar Settings Manager")
-        self.setMinimumSize(800, 600)
+        self.setMinimumSize(800, 900)
         
         # Initialize settings manager
         self.settings_manager = SettingsManager()
@@ -698,6 +947,23 @@ class CVRProfileManager(QMainWindow):
         directory_layout.addWidget(self.directory_label)
         
         self.change_dir_button = QPushButton("Change Directory")
+        self.change_dir_button.setFixedHeight(28)  # Make button height consistent
+        self.change_dir_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.change_dir_button.clicked.connect(self.select_cvr_directory)
         directory_layout.addWidget(self.change_dir_button)
         
@@ -707,6 +973,18 @@ class CVRProfileManager(QMainWindow):
         search_layout = QHBoxLayout()
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search profiles...")
+        self.search_bar.setStyleSheet("""
+            QLineEdit {
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #999;
+            }
+        """)
         self.search_bar.textChanged.connect(self.filter_profiles)
         search_layout.addWidget(self.search_bar)
         layout.addLayout(search_layout)
@@ -715,6 +993,28 @@ class CVRProfileManager(QMainWindow):
         sort_layout = QHBoxLayout()
         sort_label = QLabel("Sort by:")
         self.sort_combo = QComboBox()
+        self.sort_combo.setStyleSheet("""
+            QComboBox {
+                padding: 6px 12px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 13px;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 4px solid #666;
+            }
+            QComboBox:hover {
+                border: 1px solid #999;
+            }
+        """)
         self.sort_combo.addItems(["Avatar Name (A-Z)", "Filename (A-Z)"])
         self.sort_combo.currentIndexChanged.connect(self.sort_profiles)
         sort_layout.addWidget(sort_label)
@@ -745,17 +1045,71 @@ class CVRProfileManager(QMainWindow):
         
         # Add show empty profiles checkbox
         self.show_empty_checkbox = QCheckBox("Show Empty Profiles")
+        self.show_empty_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 13px;
+                spacing: 6px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                background-color: white;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #f0f0f0;
+                border: 1px solid #999;
+            }
+            QCheckBox::indicator:hover {
+                border: 1px solid #999;
+            }
+        """)
         self.show_empty_checkbox.setChecked(False)
         self.show_empty_checkbox.stateChanged.connect(self.refresh_profiles)
         profile_management_layout.addWidget(self.show_empty_checkbox)
         
         # Add delete selected profile button
         self.delete_profile_button = QPushButton("Delete Selected Profile")
+        self.delete_profile_button.setFixedHeight(28)  # Make button height consistent
+        self.delete_profile_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.delete_profile_button.clicked.connect(self.delete_selected_profile)
         profile_management_layout.addWidget(self.delete_profile_button)
         
         # Add purge empty profiles button
         self.purge_empty_button = QPushButton("Purge Empty Profiles")
+        self.purge_empty_button.setFixedHeight(28)  # Make button height consistent
+        self.purge_empty_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.purge_empty_button.clicked.connect(self.purge_empty_profiles)
         profile_management_layout.addWidget(self.purge_empty_button)
         
@@ -763,11 +1117,45 @@ class CVRProfileManager(QMainWindow):
         
         # Add load from elsewhere button
         self.load_button = QPushButton("Load Profile from file...")
+        self.load_button.setFixedHeight(28)  # Make button height consistent
+        self.load_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.load_button.clicked.connect(self.load_file_from_elsewhere)
         layout.addWidget(self.load_button)
         
         # Add refresh button
         self.refresh_button = QPushButton("Refresh Profiles")
+        self.refresh_button.setFixedHeight(28)  # Make button height consistent
+        self.refresh_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
         self.refresh_button.clicked.connect(self.refresh_profiles)
         layout.addWidget(self.refresh_button)
         
