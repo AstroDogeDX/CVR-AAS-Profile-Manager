@@ -69,6 +69,7 @@ class CVRApi:
             if response.status_code == 200:
                 data = response.json()
                 logger.info(f"Successfully retrieved avatar data for ID: {avatar_id}")
+                # Return the entire data object to allow access to all fields
                 return data.get('data')
             else:
                 logger.error(f"Failed to get avatar data. Status code: {response.status_code}")

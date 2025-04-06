@@ -46,12 +46,27 @@ class CacheManager:
     
     def get_avatar_data(self, avatar_id, api_client=None):
         """Get avatar data from cache or API."""
+        # Define the required fields that should be in the cache
+        required_fields = ["name", "imageUrl", "lastUpdated", "isPublished", "isSharedWithMe", "creatorName"]
+        
         # Check if we have the data in cache
         if avatar_id in self.avatar_cache:
-            logger.info(f"Avatar {avatar_id} found in cache")
-            return self.avatar_cache[avatar_id]
+            cache_entry = self.avatar_cache[avatar_id]
+            
+            # Check if all required fields are present
+            missing_fields = [field for field in required_fields if field not in cache_entry]
+            
+            if not missing_fields:
+                logger.info(f"Avatar {avatar_id} found in cache with all required fields")
+                return cache_entry
+            else:
+                logger.info(f"Avatar {avatar_id} found in cache but missing fields: {missing_fields}")
+                # If we have an API client, fetch fresh data
+                if api_client and api_client.authenticated:
+                    logger.info(f"Updating cache for avatar {avatar_id} with missing fields")
+                    # Continue to API fetch below
         
-        # If not in cache and we have an API client, fetch from API
+        # If not in cache, missing fields, or we need to update, fetch from API
         if api_client and api_client.authenticated:
             # Get avatar data from API
             avatar_data = api_client.get_avatar_by_id(avatar_id)
@@ -60,7 +75,10 @@ class CacheManager:
                 cache_entry = {
                     "name": avatar_data.get("name", "Unknown Avatar"),
                     "imageUrl": avatar_data.get("imageUrl", ""),
-                    "lastUpdated": time.time()
+                    "lastUpdated": time.time(),
+                    "isPublished": avatar_data.get("isPublished", False),
+                    "isSharedWithMe": avatar_data.get("isSharedWithMe", False),
+                    "creatorName": avatar_data.get("user", {}).get("name", "Unknown Creator")
                 }
                 
                 # Save to cache
@@ -77,7 +95,10 @@ class CacheManager:
         return {
             "name": "Unknown Avatar",
             "imageUrl": "",
-            "lastUpdated": 0
+            "lastUpdated": 0,
+            "isPublished": False,
+            "isSharedWithMe": False,
+            "creatorName": "Unknown Creator"
         }
     
     def download_thumbnail(self, avatar_id, image_url):

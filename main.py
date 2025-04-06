@@ -218,7 +218,7 @@ class ProfileContentView(QWidget):
         
         # Add delete button
         self.delete_button = QPushButton("Delete Profile")
-        self.delete_button.setFixedHeight(28)  # Make button height consistent
+        self.delete_button.setFixedHeight(28)
         self.delete_button.setStyleSheet("""
             QPushButton {
                 padding: 4px 8px;
@@ -238,9 +238,9 @@ class ProfileContentView(QWidget):
         self.delete_button.clicked.connect(self.delete_selected_profile)
         profile_actions_layout.addWidget(self.delete_button)
         
-        # Add reorder buttons
-        self.move_up_button = QPushButton("↑")  # Unicode up arrow
-        self.move_up_button.setFixedSize(24, 24)  # Make buttons smaller
+        # Add move up/down buttons
+        self.move_up_button = QPushButton("↑")
+        self.move_up_button.setFixedSize(28, 28)
         self.move_up_button.setStyleSheet("""
             QPushButton {
                 font-size: 14px;
@@ -257,8 +257,9 @@ class ProfileContentView(QWidget):
             }
         """)
         self.move_up_button.clicked.connect(self.move_profile_up)
-        self.move_down_button = QPushButton("↓")  # Unicode down arrow
-        self.move_down_button.setFixedSize(24, 24)  # Make buttons smaller
+        
+        self.move_down_button = QPushButton("↓")
+        self.move_down_button.setFixedSize(28, 28)
         self.move_down_button.setStyleSheet("""
             QPushButton {
                 font-size: 14px;
@@ -303,13 +304,27 @@ class ProfileContentView(QWidget):
         self.avatar_id_label = QLabel("")
         avatar_info_text.addWidget(self.avatar_id_label)
         
+        # Add creator name label
+        self.creator_name_label = QLabel("")
+        self.creator_name_label.setStyleSheet("color: #666666;")
+        avatar_info_text.addWidget(self.creator_name_label)
+        
+        # Add publication status label
+        self.publication_status_label = QLabel("")
+        self.publication_status_label.setStyleSheet("color: #666666;")
+        avatar_info_text.addWidget(self.publication_status_label)
+        
+        # Add sharing status label
+        self.sharing_status_label = QLabel("")
+        self.sharing_status_label.setStyleSheet("color: #666666;")
+        avatar_info_text.addWidget(self.sharing_status_label)
+        
         avatar_info_layout.addLayout(avatar_info_text)
         left_layout.addLayout(avatar_info_layout)
         
         # Add profile name label (moved here)
         self.profile_name_label = QLabel("Select a profile")
-        self.profile_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.profile_name_label.setStyleSheet("font-weight: bold; margin: 10px 0;")
+        self.profile_name_label.setStyleSheet("font-weight: bold; font-size: 14pt; margin: 10px 0;")
         left_layout.addWidget(self.profile_name_label)
         
         # Add edit mode checkbox
@@ -480,6 +495,20 @@ class ProfileContentView(QWidget):
         
         # Update avatar ID
         self.avatar_id_label.setText(f"ID: {avatar_id}")
+        
+        # Update creator name
+        self.creator_name_label.setText(f"Creator: {avatar_data['creatorName']}")
+        
+        # Update publication status
+        publication_status = "Published" if avatar_data["isPublished"] else "Not Published"
+        self.publication_status_label.setText(f"Status: {publication_status}")
+        
+        # Update sharing status
+        if self.cvr_api.username and avatar_data['creatorName'] == self.cvr_api.username:
+            sharing_status = "Owned by you"
+        else:
+            sharing_status = "Shared with you" if avatar_data["isSharedWithMe"] else "Not shared with you"
+        self.sharing_status_label.setText(f"Sharing: {sharing_status}")
         
         # Update thumbnail
         thumbnail_path = self.parent.cache_manager.get_thumbnail_path(avatar_id)
