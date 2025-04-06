@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QHBoxLayout, QListWidget, QStackedWidget, QTextEdit,
                             QScrollArea, QCheckBox, QSplitter, QFrame, QGridLayout,
                             QInputDialog, QLineEdit, QProgressBar, QListWidgetItem,
-                            QComboBox)
+                            QComboBox, QMenu)
 from PyQt6.QtCore import Qt, QMimeData, QSize
 from PyQt6.QtGui import QDrag, QPixmap
 from settings_manager import SettingsManager
@@ -1099,6 +1099,8 @@ class CVRProfileManager(QMainWindow):
         self.profile_list.itemDoubleClicked.connect(self.load_selected_profile)
         self.profile_list.setSpacing(0)  # Remove spacing between items
         self.profile_list.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.profile_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.profile_list.customContextMenuRequested.connect(self.show_context_menu)
         list_container_layout.addWidget(self.profile_list)
         
         # Add the container to the main layout
@@ -1536,6 +1538,70 @@ class CVRProfileManager(QMainWindow):
                     self,
                     "Error",
                     f"An error occurred while purging empty profiles: {str(e)}"
+                )
+
+    def show_context_menu(self, position):
+        """Show the context menu for the list item."""
+        item = self.profile_list.itemAt(position)
+        if not item:
+            return
+            
+        menu = QMenu()
+        
+        # Add Delete Profile action
+        delete_action = menu.addAction("Delete Profile")
+        delete_action.triggered.connect(self.delete_selected_profile)
+        
+        # Add Export Profile action
+        export_action = menu.addAction("Export Profile")
+        export_action.triggered.connect(lambda: self.export_profile(item))
+        
+        menu.exec(self.profile_list.mapToGlobal(position))
+    
+    def export_profile(self, item):
+        """Export the selected profile to a new location."""
+        if not item:
+            return
+            
+        # Get the widget associated with the item
+        item_widget = self.profile_list.itemWidget(item)
+        if not item_widget:
+            return
+            
+        # Get the file name from the widget's file label
+        file_name = item_widget.file_label.text()
+        
+        # Get the source file path
+        profiles_dir = self.settings_manager.get_profiles_directory()
+        if not profiles_dir:
+            return
+            
+        source_path = os.path.join(profiles_dir, file_name)
+        
+        # Open file dialog for saving
+        target_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Profile",
+            file_name,  # Pre-populate with original filename
+            "Advanced Avatar Settings (*.advavtr);;All Files (*.*)"
+        )
+        
+        if target_path:
+            try:
+                # Copy the file to the new location
+                import shutil
+                shutil.copy2(source_path, target_path)
+                
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Profile has been exported successfully."
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"An error occurred while exporting the profile: {str(e)}"
                 )
 
 def main():
