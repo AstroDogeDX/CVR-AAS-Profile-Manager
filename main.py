@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QInputDialog, QLineEdit, QProgressBar, QListWidgetItem,
                             QComboBox, QMenu, QGroupBox)
 from PyQt6.QtCore import Qt, QMimeData, QSize
-from PyQt6.QtGui import QDrag, QPixmap
+from PyQt6.QtGui import QDrag, QPixmap, QIcon
 from settings_manager import SettingsManager
 from cvr_api import CVRApi
 from cache_manager import CacheManager
@@ -1889,6 +1889,13 @@ class CVRProfileManager(QMainWindow):
 def main():
     print("Creating application...")
     app = QApplication(sys.argv)
+    
+    # Set application icon
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "icon.png")
+    if os.path.exists(icon_path):
+        app_icon = QIcon(icon_path)
+        app.setWindowIcon(app_icon)
+    
     window = CVRProfileManager()
     window.show()
     print("Application started")
