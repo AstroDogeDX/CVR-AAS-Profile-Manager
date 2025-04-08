@@ -1050,7 +1050,7 @@ class CVRProfileManager(QMainWindow):
         layout.setSpacing(5)  # Reduce spacing between widgets
         
         # Add welcome label
-        welcome_label = QLabel("ChilloutVR AAS Manager")
+        welcome_label = QLabel("CVR Advanced Avatar Settings Manager")
         welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         welcome_label.setStyleSheet("font-size: 18pt; font-weight: bold; margin: 10px 0;")
         layout.addWidget(welcome_label)
