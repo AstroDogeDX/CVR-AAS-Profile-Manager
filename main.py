@@ -617,14 +617,24 @@ class ProfileContentView(QWidget):
         if "values" not in profile or not isinstance(profile["values"], list):
             return
         
+        # Create header container with fixed height
+        header_container = QWidget()
+        header_container.setFixedHeight(40)  # Set fixed height for header
+        header_container.setProperty("is_header", True)  # Set property to identify header
+        header_layout = QHBoxLayout(header_container)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        
         # Add header row
         name_label = QLabel("Setting Name")
         name_label.setStyleSheet("font-weight: bold;")
         value_label = QLabel("Value")
         value_label.setStyleSheet("font-weight: bold;")
         
-        self.values_layout.addWidget(name_label, 0, 0)
-        self.values_layout.addWidget(value_label, 0, 1)
+        header_layout.addWidget(name_label)
+        header_layout.addWidget(value_label)
+        
+        # Add header container to main layout
+        self.values_layout.addWidget(header_container, 0, 0, 1, 2)
         
         # Add a separator line
         separator = QFrame()
@@ -850,49 +860,58 @@ class ProfileContentView(QWidget):
         """Toggle edit mode for value fields."""
         self.edit_mode_enabled = state == Qt.CheckState.Checked.value
         
+        # Store the header container and separator if they exist
+        header_container = None
+        separator = None
+        
+        # Find and store the header container and separator
+        for i in range(self.values_layout.count()):
+            item = self.values_layout.itemAt(i)
+            if item and item.widget():
+                widget = item.widget()
+                if isinstance(widget, QWidget) and widget.property("is_header"):
+                    header_container = widget
+                elif isinstance(widget, QFrame) and widget.frameShape() == QFrame.Shape.HLine:
+                    separator = widget
+        
+        # Clear the layout while preserving the header
+        while self.values_layout.count():
+            item = self.values_layout.takeAt(0)
+            if item.widget() and item.widget() != header_container and item.widget() != separator:
+                item.widget().deleteLater()
+        
+        # Re-add the header container and separator if they exist
+        if header_container:
+            self.values_layout.addWidget(header_container, 0, 0, 1, 2)
+        if separator:
+            self.values_layout.addWidget(separator, 1, 0, 1, 2)
+        
         # Update all value widgets
-        for i in range(1, self.values_layout.rowCount()):
-            # Skip header row
-            if i == 0:
-                continue
-                
-            # Get the value widget (should be in column 1)
-            value_widget = self.values_layout.itemAtPosition(i, 1)
-            if value_widget and value_widget.widget():
-                widget = value_widget.widget()
-                
-                # If it's a QLabel, replace it with a QLineEdit
-                if isinstance(widget, QLabel) and self.edit_mode_enabled:
-                    # Store the original value
-                    original_value = widget.text()
-                    
-                    # Create a new QLineEdit
-                    line_edit = QLineEdit(original_value)
-                    line_edit.setObjectName(f"value_edit_{i}")
-                    
-                    # Replace the QLabel with the QLineEdit
-                    self.values_layout.removeWidget(widget)
-                    widget.deleteLater()
-                    self.values_layout.addWidget(line_edit, i, 1)
-                    
-                    # Store reference to the new widget
-                    self.value_widgets.append(line_edit)
-                    
-                    # Connect the textChanged signal to update the data
-                    line_edit.textChanged.connect(lambda text, row=i: self.update_value(row, text))
-                
-                # If it's a QLineEdit and edit mode is disabled, replace it with a QLabel
-                elif isinstance(widget, QLineEdit) and not self.edit_mode_enabled:
-                    # Get the current value
-                    current_value = widget.text()
-                    
-                    # Create a new QLabel
-                    label = QLabel(current_value)
-                    
-                    # Replace the QLineEdit with the QLabel
-                    self.values_layout.removeWidget(widget)
-                    widget.deleteLater()
-                    self.values_layout.addWidget(label, i, 1)
+        if self.settings_data and "savedSettings" in self.settings_data:
+            saved_settings = self.settings_data["savedSettings"]
+            if isinstance(saved_settings, list) and self.current_profile_index < len(saved_settings):
+                profile = saved_settings[self.current_profile_index]
+                if "values" in profile and isinstance(profile["values"], list):
+                    for i, value_obj in enumerate(profile["values"]):
+                        if "name" in value_obj and "value" in value_obj:
+                            name = value_obj["name"]
+                            value = value_obj["value"]
+                            
+                            # Create labels for name and value
+                            name_label = QLabel(name)
+                            
+                            # Create either a label or line edit for the value based on edit mode
+                            if self.edit_mode_enabled:
+                                value_widget = QLineEdit(str(value))
+                                value_widget.setObjectName(f"value_edit_{i+2}")  # +2 for header row and separator
+                                value_widget.textChanged.connect(lambda text, row=i+2: self.update_value(row, text))
+                                self.value_widgets.append(value_widget)
+                            else:
+                                value_widget = QLabel(str(value))
+                            
+                            # Add to layout
+                            self.values_layout.addWidget(name_label, i + 2, 0)
+                            self.values_layout.addWidget(value_widget, i + 2, 1)
         
         # Update button states
         self.update_button_states()
@@ -1111,13 +1130,13 @@ class CVRProfileManager(QMainWindow):
         # Add welcome label
         welcome_label = QLabel("CVR Advanced Avatar Settings Manager")
         welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        welcome_label.setStyleSheet("font-size: 18pt; font-weight: bold; margin: 10px 0;")
+        welcome_label.setStyleSheet("font-size: 18pt; font-weight: bold; margin: 10px 0 2px 0;")
         layout.addWidget(welcome_label)
         
         # Add version label
         version_label = QLabel(f"Version {get_version()}")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        version_label.setStyleSheet("font-size: 10pt; color: #666; margin-bottom: 10px;")
+        version_label.setStyleSheet("font-size: 10pt; color: #666; margin: 0 0 10px 0;")
         layout.addWidget(version_label)
         
         # Add CVR directory section
