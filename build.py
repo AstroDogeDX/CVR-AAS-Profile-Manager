@@ -11,7 +11,7 @@ def install_requirements():
 def build_executable():
     print("Building executable...")
     # Get the absolute path to the icon file
-    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "icon.png")
+    icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "icon.ico")
     
     # PyInstaller command with common options
     cmd = [
