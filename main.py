@@ -12,6 +12,7 @@ from PyQt6.QtGui import QDrag, QPixmap, QIcon
 from settings_manager import SettingsManager
 from cvr_api import CVRApi
 from cache_manager import CacheManager
+from version import get_version
 
 print("Starting application...")
 
@@ -985,7 +986,8 @@ class ProfileContentView(QWidget):
 class CVRProfileManager(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("CVR Advanced Avatar Settings Manager")
+        version = get_version()
+        self.setWindowTitle(f"CVR Advanced Avatar Settings Manager v{version}")
         self.setMinimumSize(800, 900)
         
         # Initialize settings manager
@@ -1111,6 +1113,12 @@ class CVRProfileManager(QMainWindow):
         welcome_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         welcome_label.setStyleSheet("font-size: 18pt; font-weight: bold; margin: 10px 0;")
         layout.addWidget(welcome_label)
+        
+        # Add version label
+        version_label = QLabel(f"Version {get_version()}")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        version_label.setStyleSheet("font-size: 10pt; color: #666; margin-bottom: 10px;")
+        layout.addWidget(version_label)
         
         # Add CVR directory section
         directory_layout = QHBoxLayout()
