@@ -20,7 +20,7 @@ class ProfileListItem(QWidget):
     def __init__(self, avatar_data, file_name, is_empty=False, parent=None):
         super().__init__(parent)
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setContentsMargins(8, 8, 8, 8)  # Increased padding for better spacing
         
         # Add thumbnail
         self.thumbnail = QLabel()
@@ -1270,7 +1270,7 @@ class CVRProfileManager(QMainWindow):
         
         self.profile_list = QListWidget()
         self.profile_list.itemDoubleClicked.connect(self.load_selected_profile)
-        self.profile_list.setSpacing(0)  # Remove spacing between items
+        self.profile_list.setSpacing(4)  # Add consistent spacing between items
         self.profile_list.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.profile_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.profile_list.customContextMenuRequested.connect(self.show_context_menu)
