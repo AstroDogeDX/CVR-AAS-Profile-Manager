@@ -871,38 +871,59 @@ class ProfileContentView(QWidget):
                 self.update_button_states()
 
     def delete_selected_profile(self):
-        """Delete the currently selected profile."""
-        if not self.settings_data or "savedSettings" not in self.settings_data:
+        """Delete the selected profile after confirmation."""
+        selected_item = self.profile_list.currentItem()
+        if not selected_item:
+            QMessageBox.warning(
+                self,
+                "No Profile Selected",
+                "Please select a profile to delete."
+            )
             return
-            
-        current_row = self.profile_list.currentRow()
-        if current_row < 0:
+        
+        # Get the widget associated with the item
+        item_widget = self.profile_list.itemWidget(selected_item)
+        if not item_widget:
             return
-            
-        # Get current profile name
-        current_item = self.profile_list.currentItem()
-        if not current_item:
-            return
-            
-        # Remove the profile from the data
-        saved_settings = self.settings_data["savedSettings"]
-        saved_settings.pop(current_row)
         
-        # Update the list widget
-        self.profile_list.takeItem(current_row)
+        # Get the file name from the widget's file label
+        file_name = item_widget.file_label.text()
         
-        # If there are more profiles, select the next one
-        if self.profile_list.count() > 0:
-            if current_row >= self.profile_list.count():
-                current_row = self.profile_list.count() - 1
-            self.profile_list.setCurrentRow(current_row)
-        else:
-            self.profile_name_label.setText("No profiles found")
-            self.clear_values_display()
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self,
+            "Confirm Deletion",
+            f"Are you sure you want to delete the profile '{file_name}'?\n\nThis action cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
         
-        # Mark that changes have been made
-        self.has_unsaved_changes = True
-        self.update_button_states()
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                # Get the file path
+                profiles_dir = self.settings_manager.get_profiles_directory()
+                if not profiles_dir:
+                    return
+                
+                file_path = os.path.join(profiles_dir, file_name)
+                
+                # Delete the file
+                os.remove(file_path)
+                
+                # Refresh the profile list
+                self.refresh_profiles()
+                
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Profile '{file_name}' has been deleted."
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"An error occurred while deleting the profile: {str(e)}"
+                )
 
 class CVRProfileManager(QMainWindow):
     def __init__(self):
@@ -1112,6 +1133,41 @@ class CVRProfileManager(QMainWindow):
         self.sort_combo.currentIndexChanged.connect(self.sort_profiles)
         sort_layout.addWidget(sort_label)
         sort_layout.addWidget(self.sort_combo)
+
+        # Add filter options
+        filter_label = QLabel("Filter:")
+        self.filter_combo = QComboBox()
+        self.filter_combo.setStyleSheet(self.sort_combo.styleSheet())  # Reuse the same style
+        self.filter_combo.addItems(["All", "Owned by me", "Shared with me", "Public"])
+        self.filter_combo.currentIndexChanged.connect(self.filter_profiles)
+        sort_layout.addWidget(filter_label)
+        sort_layout.addWidget(self.filter_combo)
+
+        # Add show empty profiles checkbox
+        self.show_empty_checkbox = QCheckBox("Show Empty Profiles")
+        self.show_empty_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 13px;
+                spacing: 6px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                background-color: white;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #f0f0f0;
+                border: 1px solid #999;
+            }
+            QCheckBox::indicator:hover {
+                border: 1px solid #999;
+            }
+        """)
+        self.show_empty_checkbox.setChecked(False)
+        self.show_empty_checkbox.stateChanged.connect(self.refresh_profiles)
+        sort_layout.addWidget(self.show_empty_checkbox)
         sort_layout.addStretch()
         layout.addLayout(sort_layout)
         
@@ -1137,32 +1193,6 @@ class CVRProfileManager(QMainWindow):
         
         # Add profile management buttons
         profile_management_layout = QHBoxLayout()
-        
-        # Add show empty profiles checkbox
-        self.show_empty_checkbox = QCheckBox("Show Empty Profiles")
-        self.show_empty_checkbox.setStyleSheet("""
-            QCheckBox {
-                font-size: 13px;
-                spacing: 6px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border: 1px solid #ccc;
-                border-radius: 3px;
-                background-color: white;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #f0f0f0;
-                border: 1px solid #999;
-            }
-            QCheckBox::indicator:hover {
-                border: 1px solid #999;
-            }
-        """)
-        self.show_empty_checkbox.setChecked(False)
-        self.show_empty_checkbox.stateChanged.connect(self.refresh_profiles)
-        profile_management_layout.addWidget(self.show_empty_checkbox)
         
         # Add delete selected profile button
         self.delete_profile_button = QPushButton("Delete Selected Profile")
@@ -1211,6 +1241,8 @@ class CVRProfileManager(QMainWindow):
         layout.addLayout(profile_management_layout)
         
         # Add load from elsewhere button
+        load_buttons_layout = QHBoxLayout()
+        
         self.load_button = QPushButton("Load Profile from file...")
         self.load_button.setFixedHeight(28)  # Make button height consistent
         self.load_button.setStyleSheet("""
@@ -1230,7 +1262,16 @@ class CVRProfileManager(QMainWindow):
             }
         """)
         self.load_button.clicked.connect(self.load_file_from_elsewhere)
-        layout.addWidget(self.load_button)
+        load_buttons_layout.addWidget(self.load_button)
+        
+        # Add import button
+        self.import_button = QPushButton("Import Profile...")
+        self.import_button.setFixedHeight(28)  # Make button height consistent
+        self.import_button.setStyleSheet(self.load_button.styleSheet())  # Reuse the same style
+        self.import_button.clicked.connect(self.import_profile)
+        load_buttons_layout.addWidget(self.import_button)
+        
+        layout.addLayout(load_buttons_layout)
         
         # Add refresh button
         self.refresh_button = QPushButton("Refresh Profiles")
@@ -1278,7 +1319,7 @@ class CVRProfileManager(QMainWindow):
         self.update_profile_list()
     
     def filter_profiles(self):
-        """Filter the profiles based on the search text."""
+        """Filter the profiles based on the search text and selected filter."""
         search_text = self.search_bar.text().lower()
         self.update_profile_list(search_text)
     
@@ -1286,10 +1327,23 @@ class CVRProfileManager(QMainWindow):
         """Update the profile list with the current sort and filter."""
         self.profile_list.clear()
         
+        filter_option = self.filter_combo.currentText()
+        
         for file_name, avatar_data, file_path, is_empty in self.profile_data:
             # Apply search filter
             if search_text and search_text not in file_name.lower() and search_text not in avatar_data["name"].lower():
                 continue
+            
+            # Apply filter options
+            if filter_option == "Owned by me":
+                if not self.profile_view.cvr_api.username or avatar_data["creatorName"] != self.profile_view.cvr_api.username:
+                    continue
+            elif filter_option == "Shared with me":
+                if not avatar_data["isSharedWithMe"]:
+                    continue
+            elif filter_option == "Public":
+                if not avatar_data["isPublished"]:
+                    continue
                 
             # Create custom list item widget
             item_widget = ProfileListItem(avatar_data, file_name, is_empty, self)
@@ -1568,7 +1622,7 @@ class CVRProfileManager(QMainWindow):
                     "Error",
                     f"An error occurred while purging empty profiles: {str(e)}"
                 )
-
+    
     def show_context_menu(self, position):
         """Show the context menu for the list item."""
         item = self.profile_list.itemAt(position)
@@ -1632,6 +1686,66 @@ class CVRProfileManager(QMainWindow):
                     "Error",
                     f"An error occurred while exporting the profile: {str(e)}"
                 )
+
+    def import_profile(self):
+        """Import a profile file and copy it to the profiles directory."""
+        file_name, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select .advavtr File to Import",
+            "",
+            "Advanced Avatar Settings (*.advavtr);;All Files (*.*)"
+        )
+        
+        if not file_name:
+            return
+            
+        try:
+            # Get the profiles directory
+            profiles_dir = self.settings_manager.get_profiles_directory()
+            if not profiles_dir:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    "Could not find profiles directory. Please set CVR directory first."
+                )
+                return
+            
+            # Get the source filename and construct target path
+            source_filename = os.path.basename(file_name)
+            target_path = os.path.join(profiles_dir, source_filename)
+            
+            # Check if file already exists
+            if os.path.exists(target_path):
+                reply = QMessageBox.question(
+                    self,
+                    "File Exists",
+                    f"A profile with the name '{source_filename}' already exists. Do you want to overwrite it?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No
+                )
+                
+                if reply != QMessageBox.StandardButton.Yes:
+                    return
+            
+            # Copy the file
+            import shutil
+            shutil.copy2(file_name, target_path)
+            
+            # Refresh the profile list to update cache
+            self.refresh_profiles()
+            
+            QMessageBox.information(
+                self,
+                "Success",
+                f"Profile '{source_filename}' has been imported successfully."
+            )
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"An error occurred while importing the profile: {str(e)}"
+            )
 
 def main():
     print("Creating application...")
