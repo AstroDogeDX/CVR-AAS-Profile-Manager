@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                             QHBoxLayout, QListWidget, QStackedWidget, QTextEdit,
                             QScrollArea, QCheckBox, QSplitter, QFrame, QGridLayout,
                             QInputDialog, QLineEdit, QProgressBar, QListWidgetItem,
-                            QComboBox, QMenu)
+                            QComboBox, QMenu, QGroupBox)
 from PyQt6.QtCore import Qt, QMimeData, QSize
 from PyQt6.QtGui import QDrag, QPixmap
 from settings_manager import SettingsManager
@@ -82,6 +82,7 @@ class ProfileListView(QListWidget):
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDragDropMode(QListWidget.DragDropMode.InternalMove)
+        self.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)  # Enable multi-selection
         self.itemDoubleClicked.connect(self.on_item_double_clicked)
     
     def on_item_double_clicked(self, item):
@@ -1194,9 +1195,13 @@ class CVRProfileManager(QMainWindow):
         # Add profile management buttons
         profile_management_layout = QHBoxLayout()
         
+        # Create a group for profile actions
+        profile_actions_group = QGroupBox("Profile Actions")
+        profile_actions_layout = QHBoxLayout()
+        
         # Add delete selected profile button
-        self.delete_profile_button = QPushButton("Delete Selected Profile")
-        self.delete_profile_button.setFixedHeight(28)  # Make button height consistent
+        self.delete_profile_button = QPushButton("Delete Selected")
+        self.delete_profile_button.setFixedHeight(28)
         self.delete_profile_button.setStyleSheet("""
             QPushButton {
                 padding: 4px 8px;
@@ -1214,86 +1219,61 @@ class CVRProfileManager(QMainWindow):
             }
         """)
         self.delete_profile_button.clicked.connect(self.delete_selected_profile)
-        profile_management_layout.addWidget(self.delete_profile_button)
+        profile_actions_layout.addWidget(self.delete_profile_button)
         
         # Add purge empty profiles button
-        self.purge_empty_button = QPushButton("Purge Empty Profiles")
-        self.purge_empty_button.setFixedHeight(28)  # Make button height consistent
-        self.purge_empty_button.setStyleSheet("""
-            QPushButton {
-                padding: 4px 8px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                background-color: #f0f0f0;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:disabled {
-                background-color: #f8f8f8;
-                color: #999;
-            }
-        """)
+        self.purge_empty_button = QPushButton("Purge Empty")
+        self.purge_empty_button.setFixedHeight(28)
+        self.purge_empty_button.setStyleSheet(self.delete_profile_button.styleSheet())
         self.purge_empty_button.clicked.connect(self.purge_empty_profiles)
-        profile_management_layout.addWidget(self.purge_empty_button)
+        profile_actions_layout.addWidget(self.purge_empty_button)
         
-        layout.addLayout(profile_management_layout)
+        profile_actions_group.setLayout(profile_actions_layout)
+        profile_management_layout.addWidget(profile_actions_group)
         
-        # Add load from elsewhere button
-        load_buttons_layout = QHBoxLayout()
-        
-        self.load_button = QPushButton("Load Profile from file...")
-        self.load_button.setFixedHeight(28)  # Make button height consistent
-        self.load_button.setStyleSheet("""
-            QPushButton {
-                padding: 4px 8px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                background-color: #f0f0f0;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:disabled {
-                background-color: #f8f8f8;
-                color: #999;
-            }
-        """)
-        self.load_button.clicked.connect(self.load_file_from_elsewhere)
-        load_buttons_layout.addWidget(self.load_button)
+        # Create a group for import/export actions
+        import_export_group = QGroupBox("Import/Export")
+        import_export_layout = QHBoxLayout()
         
         # Add import button
-        self.import_button = QPushButton("Import Profile...")
-        self.import_button.setFixedHeight(28)  # Make button height consistent
-        self.import_button.setStyleSheet(self.load_button.styleSheet())  # Reuse the same style
+        self.import_button = QPushButton("Import Profiles")
+        self.import_button.setFixedHeight(28)
+        self.import_button.setStyleSheet(self.delete_profile_button.styleSheet())
         self.import_button.clicked.connect(self.import_profile)
-        load_buttons_layout.addWidget(self.import_button)
+        import_export_layout.addWidget(self.import_button)
         
-        layout.addLayout(load_buttons_layout)
+        # Add export button
+        self.export_button = QPushButton("Export Selected")
+        self.export_button.setFixedHeight(28)
+        self.export_button.setStyleSheet(self.delete_profile_button.styleSheet())
+        self.export_button.clicked.connect(lambda: self.export_profile())
+        import_export_layout.addWidget(self.export_button)
+        
+        import_export_group.setLayout(import_export_layout)
+        profile_management_layout.addWidget(import_export_group)
+        
+        # Create a group for other actions
+        other_actions_group = QGroupBox("Other Actions")
+        other_actions_layout = QHBoxLayout()
+        
+        # Add load from elsewhere button
+        self.load_button = QPushButton("Load Profile")
+        self.load_button.setFixedHeight(28)
+        self.load_button.setStyleSheet(self.delete_profile_button.styleSheet())
+        self.load_button.clicked.connect(self.load_file_from_elsewhere)
+        other_actions_layout.addWidget(self.load_button)
         
         # Add refresh button
-        self.refresh_button = QPushButton("Refresh Profiles")
-        self.refresh_button.setFixedHeight(28)  # Make button height consistent
-        self.refresh_button.setStyleSheet("""
-            QPushButton {
-                padding: 4px 8px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                background-color: #f0f0f0;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-            QPushButton:disabled {
-                background-color: #f8f8f8;
-                color: #999;
-            }
-        """)
+        self.refresh_button = QPushButton("Refresh")
+        self.refresh_button.setFixedHeight(28)
+        self.refresh_button.setStyleSheet(self.delete_profile_button.styleSheet())
         self.refresh_button.clicked.connect(self.refresh_profiles)
-        layout.addWidget(self.refresh_button)
+        other_actions_layout.addWidget(self.refresh_button)
+        
+        other_actions_group.setLayout(other_actions_layout)
+        profile_management_layout.addWidget(other_actions_group)
+        
+        layout.addLayout(profile_management_layout)
         
         # Add progress bar for cache operations
         self.progress_bar = QProgressBar()
@@ -1641,62 +1621,126 @@ class CVRProfileManager(QMainWindow):
         
         menu.exec(self.profile_list.mapToGlobal(position))
     
-    def export_profile(self, item):
-        """Export the selected profile to a new location."""
-        if not item:
+    def export_profile(self, item=None):
+        """Export the selected profile(s) to a new location."""
+        # If no item is provided, get all selected items
+        items_to_export = [item] if item else self.profile_list.selectedItems()
+        
+        if not items_to_export:
+            QMessageBox.warning(
+                self,
+                "No Profiles Selected",
+                "Please select one or more profiles to export."
+            )
             return
             
-        # Get the widget associated with the item
-        item_widget = self.profile_list.itemWidget(item)
-        if not item_widget:
-            return
-            
-        # Get the file name from the widget's file label
-        file_name = item_widget.file_label.text()
-        
-        # Get the source file path
-        profiles_dir = self.settings_manager.get_profiles_directory()
-        if not profiles_dir:
-            return
-            
-        source_path = os.path.join(profiles_dir, file_name)
-        
-        # Open file dialog for saving
-        target_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export Profile",
-            file_name,  # Pre-populate with original filename
-            "Advanced Avatar Settings (*.advavtr);;All Files (*.*)"
-        )
-        
-        if target_path:
-            try:
-                # Copy the file to the new location
-                import shutil
-                shutil.copy2(source_path, target_path)
+        # If only one profile is selected, use the single file dialog
+        if len(items_to_export) == 1:
+            item = items_to_export[0]
+            # Get the widget associated with the item
+            item_widget = self.profile_list.itemWidget(item)
+            if not item_widget:
+                return
                 
-                QMessageBox.information(
-                    self,
-                    "Success",
-                    f"Profile has been exported successfully."
-                )
-            except Exception as e:
-                QMessageBox.critical(
-                    self,
-                    "Error",
-                    f"An error occurred while exporting the profile: {str(e)}"
-                )
+            # Get the file name from the widget's file label
+            file_name = item_widget.file_label.text()
+            
+            # Get the source file path
+            profiles_dir = self.settings_manager.get_profiles_directory()
+            if not profiles_dir:
+                return
+                
+            source_path = os.path.join(profiles_dir, file_name)
+            
+            # Open file dialog for saving
+            target_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Export Profile",
+                file_name,  # Pre-populate with original filename
+                "Advanced Avatar Settings (*.advavtr);;All Files (*.*)"
+            )
+            
+            if target_path:
+                try:
+                    # Copy the file to the new location
+                    import shutil
+                    shutil.copy2(source_path, target_path)
+                    
+                    QMessageBox.information(
+                        self,
+                        "Success",
+                        f"Profile has been exported successfully."
+                    )
+                except Exception as e:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"An error occurred while exporting the profile: {str(e)}"
+                    )
+        else:
+            # For multiple profiles, ask for a directory to export to
+            export_dir = QFileDialog.getExistingDirectory(
+                self,
+                "Select Export Directory",
+                "",
+                QFileDialog.Option.ShowDirsOnly
+            )
+            
+            if export_dir:
+                try:
+                    profiles_dir = self.settings_manager.get_profiles_directory()
+                    if not profiles_dir:
+                        return
+                        
+                    success_count = 0
+                    error_count = 0
+                    
+                    for item in items_to_export:
+                        item_widget = self.profile_list.itemWidget(item)
+                        if not item_widget:
+                            continue
+                            
+                        file_name = item_widget.file_label.text()
+                        source_path = os.path.join(profiles_dir, file_name)
+                        target_path = os.path.join(export_dir, file_name)
+                        
+                        try:
+                            import shutil
+                            shutil.copy2(source_path, target_path)
+                            success_count += 1
+                        except Exception as e:
+                            print(f"Error exporting {file_name}: {str(e)}")
+                            error_count += 1
+                    
+                    # Show results
+                    message = []
+                    if success_count > 0:
+                        message.append(f"Successfully exported {success_count} profile(s).")
+                    if error_count > 0:
+                        message.append(f"Failed to export {error_count} profile(s).")
+                    
+                    QMessageBox.information(
+                        self,
+                        "Export Results",
+                        "\n".join(message)
+                    )
+                except Exception as e:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"An error occurred while exporting profiles: {str(e)}"
+                    )
 
     def import_profile(self):
-        """Import a profile file and copy it to the profiles directory."""
-        file_name, _ = QFileDialog.getOpenFileName(
+        """Import profile file(s) and copy them to the profiles directory."""
+        file_names, _ = QFileDialog.getOpenFileNames(
             self,
-            "Select .advavtr File to Import",
+            "Select .advavtr File(s) to Import",
             "",
             "Advanced Avatar Settings (*.advavtr);;All Files (*.*)"
         )
         
-        if not file_name:
+        if not file_names:
             return
             
         try:
@@ -1710,41 +1754,64 @@ class CVRProfileManager(QMainWindow):
                 )
                 return
             
-            # Get the source filename and construct target path
-            source_filename = os.path.basename(file_name)
-            target_path = os.path.join(profiles_dir, source_filename)
+            success_count = 0
+            error_count = 0
+            skipped_count = 0
             
-            # Check if file already exists
-            if os.path.exists(target_path):
-                reply = QMessageBox.question(
-                    self,
-                    "File Exists",
-                    f"A profile with the name '{source_filename}' already exists. Do you want to overwrite it?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No
-                )
+            for file_name in file_names:
+                # Get the source filename and construct target path
+                source_filename = os.path.basename(file_name)
+                target_path = os.path.join(profiles_dir, source_filename)
                 
-                if reply != QMessageBox.StandardButton.Yes:
-                    return
-            
-            # Copy the file
-            import shutil
-            shutil.copy2(file_name, target_path)
+                # Check if file already exists
+                if os.path.exists(target_path):
+                    reply = QMessageBox.question(
+                        self,
+                        "File Exists",
+                        f"A profile with the name '{source_filename}' already exists. Do you want to overwrite it?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.YesToAll | QMessageBox.StandardButton.NoToAll,
+                        QMessageBox.StandardButton.No
+                    )
+                    
+                    if reply == QMessageBox.StandardButton.No:
+                        skipped_count += 1
+                        continue
+                    elif reply == QMessageBox.StandardButton.NoToAll:
+                        skipped_count += 1
+                        break
+                
+                try:
+                    # Copy the file
+                    import shutil
+                    shutil.copy2(file_name, target_path)
+                    success_count += 1
+                except Exception as e:
+                    print(f"Error importing {source_filename}: {str(e)}")
+                    error_count += 1
             
             # Refresh the profile list to update cache
             self.refresh_profiles()
             
+            # Show results
+            message = []
+            if success_count > 0:
+                message.append(f"Successfully imported {success_count} profile(s).")
+            if error_count > 0:
+                message.append(f"Failed to import {error_count} profile(s).")
+            if skipped_count > 0:
+                message.append(f"Skipped {skipped_count} profile(s).")
+            
             QMessageBox.information(
                 self,
-                "Success",
-                f"Profile '{source_filename}' has been imported successfully."
+                "Import Results",
+                "\n".join(message)
             )
             
         except Exception as e:
             QMessageBox.critical(
                 self,
                 "Error",
-                f"An error occurred while importing the profile: {str(e)}"
+                f"An error occurred while importing profiles: {str(e)}"
             )
 
 def main():
