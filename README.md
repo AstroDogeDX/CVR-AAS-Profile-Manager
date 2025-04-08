@@ -1,8 +1,8 @@
-# CVR AAS Profile Manager
+# CVR Advanced Avatar Settings Manager
 
 A lightweight tool for managing Advanced Avatar Settings (AAS) profiles in ChilloutVR. This application helps you organize and maintain your avatar settings by providing an intuitive interface for viewing, modifying, and managing AAS profiles.
 
-![Main Window](https://github.com/user-attachments/assets/4e1411d6-5ad9-419a-8adb-9ca7bf4e67ad)
+![Main Window](https://github.com/user-attachments/assets/dc8b9ad2-2590-4928-9928-af7b5b8ade07)
 
 ## Core Features
 
