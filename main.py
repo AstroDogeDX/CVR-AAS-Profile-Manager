@@ -25,7 +25,13 @@ class ProfileListItem(QWidget):
         self.thumbnail = QLabel()
         self.thumbnail.setFixedSize(50, 50)
         self.thumbnail.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.thumbnail.setStyleSheet("border: 1px solid #ccc;")
+        self.thumbnail.setStyleSheet("""
+            QLabel {
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f8f8f8;
+            }
+        """)
         
         # Get avatar ID from filename
         avatar_id = os.path.splitext(file_name)[0]
@@ -53,18 +59,68 @@ class ProfileListItem(QWidget):
         
         # Add text info
         text_layout = QVBoxLayout()
+        text_layout.setSpacing(2)  # Reduce spacing between elements
         
         # Avatar name
         self.name_label = QLabel(avatar_data["name"])
-        self.name_label.setStyleSheet("font-weight: bold;")
+        self.name_label.setStyleSheet("font-weight: bold; font-size: 11pt;")
         text_layout.addWidget(self.name_label)
+        
+        # Creator name
+        creator_label = QLabel(f"by {avatar_data.get('creatorName', 'Unknown Creator')}")
+        creator_label.setStyleSheet("color: #666666; font-size: 9pt;")
+        text_layout.addWidget(creator_label)
         
         # File name
         self.file_label = QLabel(file_name)
-        self.file_label.setStyleSheet("color: #666666;")  # Lighter gray color
+        self.file_label.setStyleSheet("color: #888888; font-size: 8pt;")
         text_layout.addWidget(self.file_label)
         
         layout.addLayout(text_layout)
+        
+        # Add status indicators
+        status_layout = QVBoxLayout()
+        status_layout.setSpacing(2)
+        
+        # Check if the avatar is owned by the current user
+        if parent and hasattr(parent, 'profile_view') and hasattr(parent.profile_view, 'cvr_api'):
+            is_owned = parent.profile_view.cvr_api.username and avatar_data.get('creatorName') == parent.profile_view.cvr_api.username
+            if is_owned:
+                owned_label = QLabel("Owned")
+                owned_label.setStyleSheet("""
+                    color: #7b1fa2;
+                    font-size: 8pt;
+                    padding: 2px 6px;
+                    background-color: #f3e5f5;
+                    border-radius: 3px;
+                """)
+                status_layout.addWidget(owned_label)
+        
+        # Public status (formerly Published)
+        if avatar_data.get("isPublished", False):
+            public_label = QLabel("Public")
+            public_label.setStyleSheet("""
+                color: #2e7d32;
+                font-size: 8pt;
+                padding: 2px 6px;
+                background-color: #e8f5e9;
+                border-radius: 3px;
+            """)
+            status_layout.addWidget(public_label)
+        
+        # Shared status
+        if avatar_data.get("isSharedWithMe", False):
+            shared_label = QLabel("Shared")
+            shared_label.setStyleSheet("""
+                color: #1565c0;
+                font-size: 8pt;
+                padding: 2px 6px;
+                background-color: #e3f2fd;
+                border-radius: 3px;
+            """)
+            status_layout.addWidget(shared_label)
+        
+        layout.addLayout(status_layout)
         
         # Add empty indicator if needed
         if is_empty:
@@ -73,7 +129,7 @@ class ProfileListItem(QWidget):
             layout.addWidget(empty_label)
         
         # Set fixed height for the item
-        self.setFixedHeight(60)
+        self.setFixedHeight(70)  # Increased height to accommodate new information
 
 class ProfileListView(QListWidget):
     def __init__(self, parent=None):
@@ -1169,6 +1225,29 @@ class CVRProfileManager(QMainWindow):
         self.show_empty_checkbox.setChecked(False)
         self.show_empty_checkbox.stateChanged.connect(self.refresh_profiles)
         sort_layout.addWidget(self.show_empty_checkbox)
+        
+        # Add purge empty profiles button next to the checkbox
+        self.purge_empty_button = QPushButton("Purge Empty")
+        self.purge_empty_button.setFixedHeight(28)
+        self.purge_empty_button.setStyleSheet("""
+            QPushButton {
+                padding: 4px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                font-size: 12px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:disabled {
+                background-color: #f8f8f8;
+                color: #999;
+            }
+        """)
+        self.purge_empty_button.clicked.connect(self.purge_empty_profiles)
+        sort_layout.addWidget(self.purge_empty_button)
+        
         sort_layout.addStretch()
         layout.addLayout(sort_layout)
         
@@ -1221,12 +1300,12 @@ class CVRProfileManager(QMainWindow):
         self.delete_profile_button.clicked.connect(self.delete_selected_profile)
         profile_actions_layout.addWidget(self.delete_profile_button)
         
-        # Add purge empty profiles button
-        self.purge_empty_button = QPushButton("Purge Empty")
-        self.purge_empty_button.setFixedHeight(28)
-        self.purge_empty_button.setStyleSheet(self.delete_profile_button.styleSheet())
-        self.purge_empty_button.clicked.connect(self.purge_empty_profiles)
-        profile_actions_layout.addWidget(self.purge_empty_button)
+        # Add load from elsewhere button to Profile Actions group
+        self.load_button = QPushButton("Load Profile")
+        self.load_button.setFixedHeight(28)
+        self.load_button.setStyleSheet(self.delete_profile_button.styleSheet())
+        self.load_button.clicked.connect(self.load_file_from_elsewhere)
+        profile_actions_layout.addWidget(self.load_button)
         
         profile_actions_group.setLayout(profile_actions_layout)
         profile_management_layout.addWidget(profile_actions_group)
@@ -1255,13 +1334,6 @@ class CVRProfileManager(QMainWindow):
         # Create a group for other actions
         other_actions_group = QGroupBox("Other Actions")
         other_actions_layout = QHBoxLayout()
-        
-        # Add load from elsewhere button
-        self.load_button = QPushButton("Load Profile")
-        self.load_button.setFixedHeight(28)
-        self.load_button.setStyleSheet(self.delete_profile_button.styleSheet())
-        self.load_button.clicked.connect(self.load_file_from_elsewhere)
-        other_actions_layout.addWidget(self.load_button)
         
         # Add refresh button
         self.refresh_button = QPushButton("Refresh")
